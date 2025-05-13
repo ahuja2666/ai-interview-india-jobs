@@ -1,9 +1,128 @@
 
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { LogIn, UserPlus, LogOut, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const NavBar: React.FC = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    await logout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
+    navigate("/");
+  };
+
+  const renderAuthButtons = () => {
+    if (isAuthenticated) {
+      return (
+        <>
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2"
+            onClick={() => navigate("/profile")}
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">{user?.name || user?.email}</span>
+          </Button>
+          <Button variant="outline" onClick={handleLogout} className="hidden sm:flex">
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Button variant="outline" className="hidden sm:flex" asChild>
+          <Link to="/login">
+            <LogIn className="mr-2 h-4 w-4" />
+            Login
+          </Link>
+        </Button>
+        <Button className="hidden sm:flex" asChild>
+          <Link to="/signup">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Sign Up
+          </Link>
+        </Button>
+      </>
+    );
+  };
+
+  const renderMobileMenu = () => (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="md:hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <line x1="4" x2="20" y1="12" y2="12" />
+            <line x1="4" x2="20" y1="6" y2="6" />
+            <line x1="4" x2="20" y1="18" y2="18" />
+          </svg>
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <div className="flex flex-col space-y-6 mt-6">
+          <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">
+            Home
+          </Link>
+          <Link to="/#features" className="text-lg font-medium hover:text-primary transition-colors">
+            Features
+          </Link>
+          <Link to="/#how-it-works" className="text-lg font-medium hover:text-primary transition-colors">
+            How It Works
+          </Link>
+          <Link to="/#pricing" className="text-lg font-medium hover:text-primary transition-colors">
+            Pricing
+          </Link>
+
+          <div className="h-px bg-border my-2" />
+
+          {isAuthenticated ? (
+            <>
+              <Button variant="ghost" className="justify-start" onClick={() => navigate("/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Link>
+              </Button>
+              <Button className="w-full" asChild>
+                <Link to="/signup">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+
   return (
     <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
       <div className="container flex h-16 items-center justify-between">
@@ -24,15 +143,8 @@ const NavBar: React.FC = () => {
         </nav>
         
         <div className="flex items-center gap-4">
-          <Button variant="outline" className="hidden sm:flex">Login</Button>
-          <Button className="hidden sm:flex">Sign Up</Button>
-          <Button variant="outline" size="icon" className="md:hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <line x1="4" x2="20" y1="12" y2="12" />
-              <line x1="4" x2="20" y1="6" y2="6" />
-              <line x1="4" x2="20" y1="18" y2="18" />
-            </svg>
-          </Button>
+          {renderAuthButtons()}
+          {renderMobileMenu()}
         </div>
       </div>
     </header>
