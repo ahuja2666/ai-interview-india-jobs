@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 240 54% 50%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 265 89% 78%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 240 73% 97%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -30,24 +31,17 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 240 54% 50%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -61,10 +55,10 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 240 54% 50%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 265 89% 78%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -99,3 +93,42 @@
     @apply bg-background text-foreground;
   }
 }
+
+.gradient-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary;
+}
+
+.gradient-bg {
+  @apply bg-gradient-to-r from-primary to-secondary;
+}
+
+.feature-icon-bg {
+  @apply flex items-center justify-center w-12 h-12 rounded-xl bg-accent text-primary;
+}
+
+@keyframes pulse-light {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-light {
+  animation: pulse-light 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
