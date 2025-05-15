@@ -2,9 +2,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { LogIn, UserPlus, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useAuth, UserButton, SignInButton, SignUpButton } from "@clerk/clerk-react";
 import {
   Sheet,
   SheetContent,
@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/sheet";
 
 const NavBar: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
@@ -26,17 +27,13 @@ const NavBar: React.FC = () => {
   };
 
   const renderAuthButtons = () => {
-    if (isAuthenticated) {
+    if (user) {
       return (
         <>
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2"
-            onClick={() => navigate("/profile")}
-          >
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">{user?.name || user?.email}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-sm font-medium">{user.primaryEmailAddress?.emailAddress || user.fullName}</span>
+            <UserButton afterSignOutUrl="/" />
+          </div>
           <Button variant="outline" onClick={handleLogout} className="hidden sm:flex">
             <LogOut className="mr-2 h-4 w-4" />
             Logout
@@ -47,18 +44,18 @@ const NavBar: React.FC = () => {
 
     return (
       <>
-        <Button variant="outline" className="hidden sm:flex" asChild>
-          <Link to="/login">
+        <SignInButton mode="modal">
+          <Button variant="outline" className="hidden sm:flex">
             <LogIn className="mr-2 h-4 w-4" />
             Login
-          </Link>
-        </Button>
-        <Button className="hidden sm:flex" asChild>
-          <Link to="/signup">
+          </Button>
+        </SignInButton>
+        <SignUpButton mode="modal">
+          <Button className="hidden sm:flex">
             <UserPlus className="mr-2 h-4 w-4" />
             Sign Up
-          </Link>
-        </Button>
+          </Button>
+        </SignUpButton>
       </>
     );
   };
@@ -91,12 +88,12 @@ const NavBar: React.FC = () => {
 
           <div className="h-px bg-border my-2" />
 
-          {isAuthenticated ? (
+          {user ? (
             <>
-              <Button variant="ghost" className="justify-start" onClick={() => navigate("/profile")}>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Button>
+              <div className="flex items-center gap-2 py-2">
+                <UserButton />
+                <span className="text-sm font-medium">{user.primaryEmailAddress?.emailAddress || user.fullName}</span>
+              </div>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
@@ -104,18 +101,18 @@ const NavBar: React.FC = () => {
             </>
           ) : (
             <>
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/login">
+              <SignInButton mode="modal">
+                <Button variant="outline" className="w-full">
                   <LogIn className="mr-2 h-4 w-4" />
                   Login
-                </Link>
-              </Button>
-              <Button className="w-full" asChild>
-                <Link to="/signup">
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="w-full">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Sign Up
-                </Link>
-              </Button>
+                </Button>
+              </SignUpButton>
             </>
           )}
         </div>
