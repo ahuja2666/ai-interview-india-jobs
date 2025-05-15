@@ -39,7 +39,7 @@ const Login = () => {
         // Additional verification may be required
         const { firstFactorVerification } = result;
         
-        if (firstFactorVerification.status === "pending") {
+        if (firstFactorVerification.status === "needs_verification") {
           toast({
             variant: "default",
             title: "Verification required",

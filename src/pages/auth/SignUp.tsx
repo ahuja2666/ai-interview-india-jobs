@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -46,26 +45,20 @@ const SignUp = () => {
       // Send email verification
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // Set a custom user attribute for the role
-      // This will be stored in the user metadata
-      const userData = {
-        role: role,
-        isOnboarded: false,
-      };
-      
-      // Attempt to complete the sign-up with the verification code
-      // In a real app, this would be after user enters verification code
-      // For now, we'll just proceed with sign-up
-      await signUp.setActive({
-        session: true, 
-        metadata: userData
+      toast({
+        title: "Verification email sent",
+        description: "Please check your email to verify your account.",
       });
 
+      // Store the user role in local storage to retrieve after verification
+      localStorage.setItem("userRole", role);
+      
+      // Navigate to a verification page or show verification UI
+      // For simplicity, we'll just notify the user to check their email
       toast({
         title: "Account created",
-        description: "Welcome to JobsIndiaAI!",
+        description: "Please verify your email to complete registration.",
       });
-      navigate(role === "jobseeker" ? "/onboarding/job-seeker" : "/onboarding/employer");
     } catch (error) {
       console.error("Sign-up error:", error);
       toast({
