@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (credentialResponse: any) => Promise<void>;
   signup: (email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -69,11 +69,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (credentialResponse: any) => {
     try {
       setLoading(true);
-      // Simulate API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("Google credential response:", credentialResponse);
+      
+      // In a real app, you would verify the token with your backend
+      // Here we're just creating a mock user based on the credential response
       
       // For demonstration purposes - in a real app, integrate with Google OAuth
       const mockUser: User = {
