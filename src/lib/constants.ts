@@ -7,6 +7,28 @@ export interface Job {
   salary: string;
   description: string;
   skills: string[];
+  experience: {
+    min: number;
+    max: number;
+    unit: "years" | "months";
+  };
+  education: {
+    degree: string;
+    field: string;
+    required: boolean;
+  };
+  responsibilities: string[];
+  requirements: string[];
+  benefits: string[];
+  postedDate: string;
+  applicationDeadline: string;
+  workMode: "onsite" | "remote" | "hybrid";
+  companyInfo: {
+    size: string;
+    industry: string;
+    website: string;
+    about: string;
+  };
 }
 
 export const DUMMY_JOBS: Job[] = [
@@ -19,7 +41,59 @@ export const DUMMY_JOBS: Job[] = [
     salary: "₹25L - ₹35L per annum",
     description:
       "We are looking for an experienced React developer to join our team. You will be responsible for building user interfaces and implementing new features.",
-    skills: ["React", "TypeScript", "Redux", "Next.js"],
+    skills: [
+      "React",
+      "TypeScript",
+      "Redux",
+      "Next.js",
+      "GraphQL",
+      "Jest",
+      "CI/CD",
+    ],
+    experience: {
+      min: 4,
+      max: 8,
+      unit: "years",
+    },
+    education: {
+      degree: "Bachelor's",
+      field: "Computer Science or related field",
+      required: true,
+    },
+    responsibilities: [
+      "Design and implement user interface components using React.js",
+      "Build reusable components and libraries for future use",
+      "Optimize applications for maximum speed and scalability",
+      "Collaborate with backend developers to integrate APIs",
+      "Write clean, maintainable, and well-documented code",
+      "Participate in code reviews and technical discussions",
+    ],
+    requirements: [
+      "Strong proficiency in JavaScript/TypeScript",
+      "Experience with React.js and its core principles",
+      "Familiarity with state management libraries (Redux, MobX)",
+      "Experience with testing frameworks (Jest, React Testing Library)",
+      "Understanding of RESTful APIs and GraphQL",
+      "Knowledge of modern authorization mechanisms",
+    ],
+    benefits: [
+      "Competitive salary and benefits package",
+      "Flexible work hours and remote work options",
+      "Health insurance coverage",
+      "Professional development budget",
+      "Regular team events and activities",
+      "Modern office space with latest equipment",
+    ],
+    postedDate: "2024-03-15",
+    applicationDeadline: "2024-04-15",
+    workMode: "hybrid",
+    companyInfo: {
+      size: "500-1000 employees",
+      industry: "Technology",
+      website: "https://techcorp-india.com",
+      about:
+        "TechCorp India is a leading technology company specializing in enterprise software solutions and digital transformation services.",
+    },
   },
   {
     id: 2,
@@ -30,7 +104,59 @@ export const DUMMY_JOBS: Job[] = [
     salary: "₹20L - ₹30L per annum",
     description:
       "Join our backend team to build scalable and efficient server-side applications using Node.js and related technologies.",
-    skills: ["Node.js", "Express", "MongoDB", "AWS"],
+    skills: [
+      "Node.js",
+      "Express",
+      "MongoDB",
+      "AWS",
+      "Docker",
+      "Redis",
+      "Microservices",
+    ],
+    experience: {
+      min: 3,
+      max: 6,
+      unit: "years",
+    },
+    education: {
+      degree: "Bachelor's",
+      field: "Computer Science or related field",
+      required: true,
+    },
+    responsibilities: [
+      "Design and implement scalable backend services",
+      "Develop RESTful APIs and microservices",
+      "Optimize database queries and performance",
+      "Implement security best practices",
+      "Write unit tests and integration tests",
+      "Participate in system architecture discussions",
+    ],
+    requirements: [
+      "Strong experience with Node.js and Express",
+      "Proficiency in MongoDB and database design",
+      "Experience with cloud platforms (AWS/GCP)",
+      "Knowledge of microservices architecture",
+      "Understanding of CI/CD pipelines",
+      "Experience with Docker and containerization",
+    ],
+    benefits: [
+      "Competitive compensation package",
+      "Work from home flexibility",
+      "Comprehensive health coverage",
+      "Learning and development opportunities",
+      "Performance bonuses",
+      "Employee stock options",
+    ],
+    postedDate: "2024-03-14",
+    applicationDeadline: "2024-04-14",
+    workMode: "remote",
+    companyInfo: {
+      size: "200-500 employees",
+      industry: "Software Development",
+      website: "https://innovate-solutions.com",
+      about:
+        "Innovate Solutions is a fast-growing software development company focused on building innovative solutions for clients worldwide.",
+    },
   },
   {
     id: 3,
@@ -41,7 +167,59 @@ export const DUMMY_JOBS: Job[] = [
     salary: "₹30L - ₹45L per annum",
     description:
       "Work on cutting-edge AI projects, implementing and optimizing large language models and AI solutions.",
-    skills: ["Python", "TensorFlow", "PyTorch", "LLMs"],
+    skills: [
+      "Python",
+      "TensorFlow",
+      "PyTorch",
+      "LLMs",
+      "NLP",
+      "Machine Learning",
+      "Deep Learning",
+    ],
+    experience: {
+      min: 2,
+      max: 5,
+      unit: "years",
+    },
+    education: {
+      degree: "Master's",
+      field: "Computer Science, AI, or related field",
+      required: true,
+    },
+    responsibilities: [
+      "Develop and implement AI/ML models",
+      "Work with large language models and NLP",
+      "Optimize model performance and efficiency",
+      "Collaborate with research teams",
+      "Document technical solutions",
+      "Stay updated with AI advancements",
+    ],
+    requirements: [
+      "Strong background in machine learning",
+      "Experience with deep learning frameworks",
+      "Knowledge of NLP and LLMs",
+      "Proficiency in Python",
+      "Understanding of model deployment",
+      "Research experience is a plus",
+    ],
+    benefits: [
+      "Attractive salary package",
+      "Research and development opportunities",
+      "Conference attendance support",
+      "Health and wellness benefits",
+      "Flexible work arrangements",
+      "Access to latest AI resources",
+    ],
+    postedDate: "2024-03-13",
+    applicationDeadline: "2024-04-13",
+    workMode: "hybrid",
+    companyInfo: {
+      size: "100-200 employees",
+      industry: "Artificial Intelligence",
+      website: "https://ai-solutions.com",
+      about:
+        "AI Solutions Ltd is a pioneering company in artificial intelligence, focusing on developing innovative AI solutions for various industries.",
+    },
   },
   {
     id: 4,
@@ -52,6 +230,58 @@ export const DUMMY_JOBS: Job[] = [
     salary: "₹28L - ₹40L per annum",
     description:
       "Looking for a full stack developer to work on end-to-end development of web applications.",
-    skills: ["React", "Node.js", "PostgreSQL", "Docker"],
+    skills: [
+      "React",
+      "Node.js",
+      "PostgreSQL",
+      "Docker",
+      "AWS",
+      "GraphQL",
+      "TypeScript",
+    ],
+    experience: {
+      min: 3,
+      max: 7,
+      unit: "years",
+    },
+    education: {
+      degree: "Bachelor's",
+      field: "Computer Science or related field",
+      required: true,
+    },
+    responsibilities: [
+      "Develop full-stack web applications",
+      "Design and implement database schemas",
+      "Create RESTful APIs and GraphQL endpoints",
+      "Implement frontend features and UI components",
+      "Write automated tests",
+      "Deploy and maintain applications",
+    ],
+    requirements: [
+      "Proficiency in React and Node.js",
+      "Experience with PostgreSQL or similar databases",
+      "Knowledge of Docker and containerization",
+      "Understanding of AWS services",
+      "Experience with GraphQL",
+      "Strong problem-solving skills",
+    ],
+    benefits: [
+      "Competitive salary package",
+      "Flexible work environment",
+      "Health insurance coverage",
+      "Professional development support",
+      "Team building activities",
+      "Modern tech stack",
+    ],
+    postedDate: "2024-03-12",
+    applicationDeadline: "2024-04-12",
+    workMode: "onsite",
+    companyInfo: {
+      size: "50-200 employees",
+      industry: "Digital Solutions",
+      website: "https://digital-innovations.com",
+      about:
+        "Digital Innovations is a dynamic company focused on creating innovative digital solutions for businesses across various sectors.",
+    },
   },
 ];

@@ -1,23 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import NavBar from "@/components/NavBar";
 import { DUMMY_JOBS } from "@/lib/constants";
+import JobCard from "@/components/JobCard";
+import NavBar from "@/components/NavBar";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
 
   const filteredJobs = DUMMY_JOBS.filter(
     (job) =>
@@ -31,16 +21,20 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
-      <div className="container mx-auto px-4 py-8">
-        {/* Search Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-6">Find Your Dream Job</h1>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-8">
+          <div className="flex flex-col gap-4">
+            <h1 className="text-4xl font-bold">Find Your Next Opportunity</h1>
+            <p className="text-muted-foreground">
+              Browse through our curated list of AI and tech jobs
+            </p>
+          </div>
+
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                type="text"
-                placeholder="Search jobs by title, company, or skills..."
+                placeholder="Search jobs, companies, or skills..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -48,46 +42,12 @@ const Home = () => {
             </div>
             <Button>Search</Button>
           </div>
-        </div>
 
-        {/* Jobs Listing */}
-        <div className="grid gap-6">
-          {filteredJobs.map((job) => (
-            <Card key={job.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">{job.title}</CardTitle>
-                    <CardDescription className="mt-1">
-                      {job.company}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="secondary">{job.type}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-muted-foreground">{job.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills.map((skill, index) => (
-                      <Badge key={index} variant="outline">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="text-sm text-muted-foreground">
-                  <p>{job.location}</p>
-                  <p className="font-medium text-foreground">{job.salary}</p>
-                </div>
-                <Button onClick={() => navigate(`/job/${job.id}`)}>
-                  Apply Now
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+          <div className="grid gap-6">
+            {filteredJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
         </div>
       </div>
     </div>

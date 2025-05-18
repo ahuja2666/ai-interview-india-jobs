@@ -21,11 +21,88 @@ import { useToast } from "@/hooks/use-toast";
 import { DUMMY_JOBS } from "@/lib/constants";
 import NavBar from "@/components/NavBar";
 
+const voiceWaveKeyframes = `
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes voiceWave {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+`;
+
+const softGlowKeyframes = `
+@keyframes softGlowPulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}`;
+
+const style = document.createElement("style");
+style.textContent = voiceWaveKeyframes;
+document.head.appendChild(style);
+
+if (!document.getElementById("softGlowKeyframes")) {
+  const style = document.createElement("style");
+  style.id = "softGlowKeyframes";
+  style.textContent = softGlowKeyframes;
+  document.head.appendChild(style);
+}
+
+if (!document.getElementById("voiceWaveKeyframes")) {
+  const style = document.createElement("style");
+  style.id = "voiceWaveKeyframes";
+  style.textContent = voiceWaveKeyframes;
+  document.head.appendChild(style);
+}
+
 const Interview = () => {
   const { candidateId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [hasSpoken, setHasSpoken] = useState(false);
 
   // Separate states for video and audio
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -239,6 +316,64 @@ const Interview = () => {
     };
   }, [setupVideoStream, setupAudioStream, updateDeviceList, toast]);
 
+  // Add speech synthesis
+  useEffect(() => {
+    const speakText = () => {
+      const text = "If you are able to hear me you can start the interview";
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        setHasSpoken(true);
+      };
+      utterance.onend = () => setIsSpeaking(false);
+
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 1000);
+    };
+
+    const timer = setTimeout(() => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.resume();
+        speakText();
+      }
+    }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Add a function to replay the audio
+  const replayAudio = () => {
+    const text = "If you are able to hear me you can start the interview";
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setHasSpoken(true);
+    };
+    utterance.onend = () => setIsSpeaking(false);
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   const handleStartInterview = () => {
     navigate(`/interview/${candidateId}/start`);
   };
@@ -350,6 +485,69 @@ const Interview = () => {
 
           {/* Right side - Ready to Join */}
           <div className="flex flex-col justify-center">
+            {/* Voice Speaking Animation */}
+            <div className="relative flex flex-col items-center justify-center mb-6">
+              {/* Voice Wave Animation (when speaking) */}
+              {isSpeaking && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="absolute w-28 h-28 rounded-full border-2 border-primary"
+                      style={{
+                        animation: `voiceWave 1.8s cubic-bezier(0.4,0,0.2,1) ${
+                          i * 0.4
+                        }s infinite`,
+                        opacity: 0.5,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+              {/* Radial Glow (static, always visible) */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                <div
+                  className="w-24 h-24 rounded-full"
+                  style={{
+                    background:
+                      "radial-gradient(circle, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0.05) 70%, transparent 100%)",
+                    filter: "blur(4px)",
+                  }}
+                />
+              </div>
+              {/* Central Logo Circle */}
+              <div
+                className="relative w-20 h-20 rounded-full bg-white border-2 border-primary flex items-center justify-center shadow-md z-10 cursor-pointer"
+                onClick={replayAudio}
+                title="Click to replay audio"
+              >
+                <span
+                  className="text-4xl font-bold"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #6366f1 0%, #818cf8 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  AI
+                </span>
+              </div>
+            </div>
+            {/* Improved Waiting Text and Dots */}
+            {!isSpeaking && !hasSpoken && (
+              <div className="flex flex-col items-center gap-3 mb-6">
+                <p className="text-lg text-muted-foreground font-medium text-center">
+                  Waiting for Jobs India AI
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-[bounce_1s_infinite_400ms]"></div>
+                </div>
+              </div>
+            )}
+
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center space-y-6">
