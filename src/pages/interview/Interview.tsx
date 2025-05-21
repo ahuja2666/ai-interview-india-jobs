@@ -319,10 +319,10 @@ const Interview = () => {
   // Add speech synthesis
   useEffect(() => {
     const speakText = () => {
+      const voices = window.speechSynthesis.getVoices();
       const text = "If you are able to hear me you can start the interview";
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
+      utterance.voice = voices.find((v) => v.name === "Kathy") || voices[5];
 
       utterance.onstart = () => {
         setIsSpeaking(true);
@@ -374,8 +374,8 @@ const Interview = () => {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleStartInterview = () => {
-    navigate(`/interview/${candidateId}/start`);
+  const handleStartInterview = async () => {
+    navigate(`/interview/${candidateId}/call`);
   };
 
   return (

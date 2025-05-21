@@ -20,6 +20,7 @@ import {
 import Home from "./pages/Home";
 import Job from "./pages/Job";
 import Interview from "@/pages/interview/Interview";
+import InterviewCall from "@/pages/interview/InterviewCall";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,19 @@ const App = () => {
                 <>
                   <SignedIn>
                     <Interview />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              }
+            />
+            <Route
+              path="/interview/:candidateId/call"
+              element={
+                <>
+                  <SignedIn>
+                    <InterviewCall />
                   </SignedIn>
                   <SignedOut>
                     <RedirectToSignIn />
