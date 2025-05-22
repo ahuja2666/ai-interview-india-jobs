@@ -6,6 +6,70 @@ import { Mic, MicOff, Video, VideoOff, Share2, PhoneOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import NavBar from "@/components/NavBar";
+import { useInterviewWebSocket } from "@/hooks/useInterviewWebSocket";
+import { DUMMY_FEEDBACK, DUMMY_JOBS, DUMMY_RESUME } from "@/lib/constants";
+import Feedback from "@/components/Feedback";
+
+// Add type declarations for SpeechRecognition
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionError extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onaudioend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onaudiostart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onerror:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionError) => void)
+    | null;
+  onnomatch: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onresult:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
+    | null;
+  onsoundend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onsoundstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onspeechend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onspeechstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 const InterviewCall = () => {
   const { candidateId } = useParams();
@@ -13,22 +77,58 @@ const InterviewCall = () => {
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [interviewState, setInterviewState] = useState<
+    "setup" | "interview" | "feedback"
+  >("setup");
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const userVideoRef = useRef<HTMLVideoElement>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const userStreamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   // Ref to track if initial stream setup is complete
   const initialSetupCompleteRef = useRef(false);
-
+  const finalTranscriptRef = useRef("");
+  const silenceTimeoutRef = useRef<number | null>(null);
   // Function to stop all tracks in a stream
   const stopStreamTracks = useCallback((stream: MediaStream | null) => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
   }, []);
+
+  const {
+    connect,
+    disconnect,
+    startInterview,
+    submitAnswer,
+    currentQuestion,
+    questionNumber,
+    feedback,
+    isConnected,
+  } = useInterviewWebSocket({
+    onConnect: () => {
+      setSocketConnected(true);
+      toast({
+        title: "Connected to server",
+        description: "You can now start the interview",
+      });
+    },
+    onDisconnect: () => {
+      setSocketConnected(false);
+      toast({
+        title: "Disconnected from server",
+        variant: "destructive",
+        description: "Connection to server lost",
+      });
+    },
+    onInterviewStarted: () => setInterviewState("interview"),
+    onInterviewComplete: () => setInterviewState("feedback"),
+  });
 
   // Effect to get initial user media (camera/mic) and display media (screen share)
   useEffect(() => {
@@ -360,132 +460,316 @@ const InterviewCall = () => {
     console.log("Navigating to home.");
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - Meeting View (AI Avatar) */}
-          <div className="lg:col-span-2">
-            <Card className="h-[calc(100vh-12rem)]">
-              <CardContent className="p-0 h-full relative">
-                {/* AI Avatar (Large) */}
-                <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                  <div className="relative">
-                    {/* AI Avatar Animation */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-48 h-48 rounded-full bg-primary/20 animate-pulse" />
-                    </div>
-                    {/* AI Avatar Image */}
-                    <div className="relative z-10">
-                      <div className="w-40 h-40 rounded-full bg-white border-4 border-primary flex items-center justify-center shadow-lg">
-                        <span className="text-6xl font-bold text-primary">
-                          AI
-                        </span>
+  const speakText = (text: string) => {
+    if ("speechSynthesis" in window && !isMuted) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+      // when speech ends (or is cancelled)
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+      window.speechSynthesis.cancel(); // Stop any current speech
+      window.speechSynthesis.speak(utterance);
+    } else if (!("speechSynthesis" in window)) {
+      toast({
+        title: "Text-to-Speech not supported",
+        description: "Your browser does not support text-to-speech",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const listenSpeech = (silenceThresholdMs = 5000) => {
+    // don't start listening if we're currently speaking
+    if (isSpeaking) {
+      console.warn("Cannot start listening while speaking");
+      return;
+    }
+
+    // browser support check
+    const SpeechRecognition =
+      (window as Window & { SpeechRecognition: new () => SpeechRecognition })
+        .SpeechRecognition ||
+      (
+        window as Window & {
+          webkitSpeechRecognition: new () => SpeechRecognition;
+        }
+      ).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({
+        title: "Speech Recognition not supported",
+        description: "Your browser does not support speech recognition",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // reuse instance if already created
+    let recognition = recognitionRef.current;
+    if (!recognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = true; // get partial results
+      recognition.maxAlternatives = 1;
+      recognition.continuous = true;
+      recognitionRef.current = recognition;
+    }
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      finalTranscriptRef.current = "";
+      silenceTimeoutRef.current = window.setTimeout(
+        () => recognition!.stop(),
+        silenceThresholdMs
+      );
+      console.log("🔴 Listening started");
+    };
+
+    recognition.onresult = (event) => {
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+      }
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const res = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += res;
+        } else {
+          interim += res;
+        }
+      }
+      console.log("ℹ️ Interim:", interim);
+      silenceTimeoutRef.current = window.setTimeout(
+        () => recognition!.stop(),
+        silenceThresholdMs
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      console.log("🛑 Listening stopped", finalTranscriptRef.current);
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = null;
+      }
+      submitAnswer(finalTranscriptRef.current);
+      // If you want continuous listening, you could call recognition.start() again here
+    };
+
+    recognition.onerror = (err) => {
+      setIsListening(false);
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = null;
+      }
+      submitAnswer(finalTranscriptRef.current);
+      console.error("Speech recognition error:", err.error);
+    };
+
+    // kick it off
+    recognition.start();
+  };
+
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
+
+  useEffect(() => {
+    connect();
+  }, []);
+
+  useEffect(() => {
+    if (isConnected && isScreenSharing) {
+      startInterview(
+        JSON.stringify(DUMMY_JOBS[0]),
+        JSON.stringify(DUMMY_RESUME)
+      );
+    }
+  }, [isConnected, isScreenSharing]);
+
+  useEffect(() => {
+    if (currentQuestion && !isListening) {
+      speakText(currentQuestion);
+    }
+  }, [currentQuestion, isListening]);
+
+  // Clean up
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSpeaking) {
+      listenSpeech();
+    }
+  }, [isSpeaking]);
+
+  return interviewState === "feedback" ? (
+    <Feedback
+      feedback={DUMMY_FEEDBACK.feedback}
+      rating={DUMMY_FEEDBACK.rating}
+      keyTakeaways={DUMMY_FEEDBACK.keyTakeaways}
+    />
+  ) : (
+    <>
+      <div className="min-h-screen bg-background">
+        <NavBar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content - Meeting View (AI Avatar) */}
+            <div className="lg:col-span-2">
+              <Card className="h-[calc(100vh-12rem)]">
+                <CardContent className="p-0 h-full relative">
+                  {/* AI Avatar (Large) */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                    <div className="relative">
+                      {/* AI Avatar Animation */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-48 h-48 rounded-full bg-primary/20 animate-pulse" />
+                      </div>
+                      {/* AI Avatar Image */}
+                      <div className="relative z-10">
+                        <div className="w-40 h-40 rounded-full bg-white border-4 border-primary flex items-center justify-center shadow-lg">
+                          <span className="text-6xl font-bold text-primary">
+                            AI
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* The candidate video preview is now in the right sidebar */}
-                {/* ... */}
-              </CardContent>
-            </Card>
-          </div>
+                  {/* The candidate video preview is now in the right sidebar */}
+                  {/* ... */}
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Right Sidebar - Info, User Video, and Controls */}
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="mt-4 text-center">
-                  <h3 className="font-semibold text-lg">AI Interviewer</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isSpeaking ? "Speaking..." : "Listening..."}
-                  </p>
-                  {/* Interview Status Indicator */}
-                  <div className="mt-2 flex items-center justify-center gap-2">
-                    <span
-                      className={`w-3 h-3 rounded-full ${
-                        isScreenSharing ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {isScreenSharing
-                        ? "Interview Running"
-                        : "Interview Paused (Screen Share Required)"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Candidate Video Preview (now in sidebar) */}
-            <Card>
-              <CardContent className="p-0">
-                <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-                  <video
-                    ref={userVideoRef}
-                    autoPlay
-                    playsInline
-                    muted // Mute local preview to avoid echo
-                    className="w-full h-full object-cover"
-                  />
-                  {!isScreenSharing && (
-                    <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-                      <p className="text-white text-center px-4 text-sm">
-                        Entire Screen sharing required.
-                        <br />
-                        Click the share button below to re-share.
-                      </p>
+            {/* Right Sidebar - Info, User Video, and Controls */}
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="mt-4 text-center">
+                    <h3 className="font-semibold text-lg">AI Interviewer</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {interviewState === "setup"
+                        ? "processing..."
+                        : isSpeaking
+                        ? "Speaking..."
+                        : isListening
+                        ? "Listening..."
+                        : "processing..."}
+                    </p>
+                    {/* Interview Status Indicator */}
+                    <div className="mt-2 flex items-center justify-center gap-2">
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          isScreenSharing ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {isScreenSharing
+                          ? "Interview Running"
+                          : "Interview Paused (Screen Share Required)"}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                  <div className="mt-2 flex justify-center items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        isConnected
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {isConnected ? "Connected" : "Disconnected"}
+                    </span>
+                    {!isConnected && (
+                      <Button variant="outline" size="sm" onClick={connect}>
+                        Connect
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Controls */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-center gap-4">
-                  <Button
-                    variant={isMuted ? "destructive" : "outline"}
-                    size="icon"
-                    onClick={toggleMute}
-                  >
-                    {isMuted ? (
-                      <MicOff className="h-4 w-4" />
-                    ) : (
-                      <Mic className="h-4 w-4" />
+              {/* Candidate Video Preview (now in sidebar) */}
+              <Card>
+                <CardContent className="p-0">
+                  <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
+                    <video
+                      ref={userVideoRef}
+                      autoPlay
+                      playsInline
+                      muted // Mute local preview to avoid echo
+                      className="w-full h-full object-cover"
+                      style={{ transform: "scaleX(-1)" }}
+                    />
+                    {!isScreenSharing && (
+                      <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+                        <p className="text-white text-center px-4 text-sm">
+                          Entire Screen sharing required.
+                          <br />
+                          Click the share button below to re-share.
+                        </p>
+                      </div>
                     )}
-                  </Button>
-                  <Button
-                    variant={isVideoOff ? "destructive" : "outline"}
-                    size="icon"
-                    onClick={toggleVideo}
-                  >
-                    {isVideoOff ? (
-                      <VideoOff className="h-4 w-4" />
-                    ) : (
-                      <Video className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant={!isScreenSharing ? "destructive" : "outline"}
-                    size="icon"
-                    onClick={toggleScreenShare} // This button now triggers re-prompt if needed
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="destructive" size="icon" onClick={endCall}>
-                    <PhoneOff className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Controls */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      variant={isMuted ? "destructive" : "outline"}
+                      size="icon"
+                      onClick={toggleMute}
+                    >
+                      {isMuted ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant={isVideoOff ? "destructive" : "outline"}
+                      size="icon"
+                      onClick={toggleVideo}
+                    >
+                      {isVideoOff ? (
+                        <VideoOff className="h-4 w-4" />
+                      ) : (
+                        <Video className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant={!isScreenSharing ? "destructive" : "outline"}
+                      size="icon"
+                      onClick={toggleScreenShare} // This button now triggers re-prompt if needed
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="destructive" size="icon" onClick={endCall}>
+                      <PhoneOff className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
