@@ -41,7 +41,7 @@ const App = () => {
                     <Home />
                   </SignedIn>
                   <SignedOut>
-                    <RedirectToSignIn />
+                    <Index />
                   </SignedOut>
                 </>
               }
