@@ -72,7 +72,7 @@ declare global {
 }
 
 const InterviewCall = () => {
-  const { candidateId } = useParams();
+  const { jobid } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
@@ -107,6 +107,7 @@ const InterviewCall = () => {
     startInterview,
     submitAnswer,
     currentQuestion,
+    setCurrentQuestion,
     questionNumber,
     feedback,
     isConnected,
@@ -460,25 +461,71 @@ const InterviewCall = () => {
     console.log("Navigating to home.");
   };
 
-  const speakText = (text: string) => {
-    if ("speechSynthesis" in window && !isMuted) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
-      // when speech ends (or is cancelled)
-      utterance.onend = () => {
+  const speakText = (base64Audio: string | null) => {
+    if (typeof base64Audio === "string" && base64Audio.trim() !== "") {
+      try {
+        console.log(
+          "Processing audio data:",
+          base64Audio.substring(0, 50) + "..."
+        );
+
+        // Convert base64 to audio
+        const binaryString = window.atob(base64Audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: "audio/mp3" }); // OpenAI TTS uses MP3 format
+        const audioUrl = URL.createObjectURL(blob);
+
+        // Create and play audio
+        const audio = new Audio(audioUrl);
+
+        audio.onplay = () => {
+          console.log("Audio playback started");
+          setIsSpeaking(true);
+        };
+
+        audio.onended = () => {
+          console.log("Audio playback ended");
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl); // Clean up the URL
+        };
+
+        audio.onerror = () => {
+          console.error("Audio playback error");
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          toast({
+            title: "Audio Playback Error",
+            description: "Failed to play the audio response",
+            variant: "destructive",
+          });
+        };
+
+        audio.play().catch((error) => {
+          console.error("Error playing audio:", error);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          toast({
+            title: "Audio Playback Error",
+            description: "Failed to play the audio response",
+            variant: "destructive",
+          });
+        });
+      } catch (error) {
+        console.error("Error processing audio data:", error);
         setIsSpeaking(false);
-      };
-      window.speechSynthesis.cancel(); // Stop any current speech
-      window.speechSynthesis.speak(utterance);
-    } else if (!("speechSynthesis" in window)) {
-      toast({
-        title: "Text-to-Speech not supported",
-        description: "Your browser does not support text-to-speech",
-        variant: "destructive",
-      });
+        toast({
+          title: "Audio Processing Error",
+          description: "Failed to process the audio data",
+          variant: "destructive",
+        });
+      }
+    } else {
+      console.log("Invalid audio data received:", base64Audio);
     }
+    setCurrentQuestion(null);
   };
 
   const listenSpeech = (silenceThresholdMs = 5000) => {
@@ -585,12 +632,23 @@ const InterviewCall = () => {
   useEffect(() => {
     if (isConnected && isScreenSharing) {
       startInterview(
-        JSON.stringify(DUMMY_JOBS[0]),
-        JSON.stringify(DUMMY_RESUME)
+        JSON.stringify(DUMMY_JOBS.find((item) => item.id === Number(jobid))),
+        localStorage.getItem("candidateResume")
       );
     }
   }, [isConnected, isScreenSharing]);
 
+  // Effect to handle screen sharing when interview ends
+  useEffect(() => {
+    if (interviewState === "feedback") {
+      console.log("Interview ended, stopping screen share");
+      stopStreamTracks(screenStreamRef.current);
+      screenStreamRef.current = null;
+      setIsScreenSharing(false);
+    }
+  }, [interviewState]);
+
+  // Effect to handle audio playback
   useEffect(() => {
     if (currentQuestion && !isListening) {
       speakText(currentQuestion);
@@ -615,9 +673,11 @@ const InterviewCall = () => {
 
   return interviewState === "feedback" ? (
     <Feedback
-      feedback={DUMMY_FEEDBACK.feedback}
-      rating={DUMMY_FEEDBACK.rating}
-      keyTakeaways={DUMMY_FEEDBACK.keyTakeaways}
+      feedback={{
+        rating: Number(feedback?.rating),
+        feedback: feedback?.feedback || "",
+        keyTakeaways: feedback?.keyTakeaways || [],
+      }}
     />
   ) : (
     <>
@@ -638,7 +698,15 @@ const InterviewCall = () => {
                       </div>
                       {/* AI Avatar Image */}
                       <div className="relative z-10">
-                        <div className="w-40 h-40 rounded-full bg-white border-4 border-primary flex items-center justify-center shadow-lg">
+                        {/* Pulsing circles animation */}
+                        {isSpeaking && (
+                          <>
+                            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                            <div className="absolute inset-0 rounded-full bg-primary/30 animate-ping [animation-delay:300ms]" />
+                            <div className="absolute inset-0 rounded-full bg-primary/40 animate-ping [animation-delay:600ms]" />
+                          </>
+                        )}
+                        <div className="w-40 h-40 rounded-full bg-white border-4 border-primary flex items-center justify-center shadow-lg relative">
                           <span className="text-6xl font-bold text-primary">
                             AI
                           </span>

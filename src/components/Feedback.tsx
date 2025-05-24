@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star, Home } from "lucide-react";
 
-interface FeedbackProps {
-  feedback: string;
-  rating: number;
-  keyTakeaways: string[];
+export interface FeedbackProps {
+  feedback: {
+    rating: number;
+    feedback: string;
+    keyTakeaways: string[];
+  };
 }
 
-const Feedback = ({ feedback, rating, keyTakeaways }: FeedbackProps) => {
+const Feedback = ({ feedback }: FeedbackProps) => {
   const navigate = useNavigate();
 
   const renderStars = () => {
@@ -17,7 +19,9 @@ const Feedback = ({ feedback, rating, keyTakeaways }: FeedbackProps) => {
       <Star
         key={star}
         className={`w-8 h-8 ${
-          star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+          star <= feedback.rating
+            ? "text-yellow-400 fill-yellow-400"
+            : "text-gray-300"
         }`}
       />
     ));
@@ -39,7 +43,7 @@ const Feedback = ({ feedback, rating, keyTakeaways }: FeedbackProps) => {
             </h3>
             <div className="flex justify-center gap-1">{renderStars()}</div>
             <p className="text-sm text-muted-foreground">
-              Rated {rating} out of 5
+              Rated {feedback.rating} out of 5
             </p>
           </div>
 
@@ -47,7 +51,7 @@ const Feedback = ({ feedback, rating, keyTakeaways }: FeedbackProps) => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Interview Analysis</h3>
             <div className="bg-muted p-4 rounded-lg">
-              <p className="whitespace-pre-wrap">{feedback}</p>
+              <p className="whitespace-pre-wrap">{feedback.feedback}</p>
             </div>
           </div>
 
@@ -55,7 +59,7 @@ const Feedback = ({ feedback, rating, keyTakeaways }: FeedbackProps) => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Key Takeaways</h3>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-              {keyTakeaways.map((takeaway, index) => (
+              {feedback.keyTakeaways.map((takeaway, index) => (
                 <li key={index}>{takeaway}</li>
               ))}
             </ul>

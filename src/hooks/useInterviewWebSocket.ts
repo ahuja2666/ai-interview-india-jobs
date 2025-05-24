@@ -1,3 +1,4 @@
+import { FeedbackProps } from "@/components/Feedback";
 import { useState, useCallback, useRef, useEffect } from "react";
 
 // Generate a unique client ID
@@ -23,7 +24,11 @@ export const useInterviewWebSocket = ({
   const [isConnected, setIsConnected] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [questionNumber, setQuestionNumber] = useState(0);
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<{
+    rating: number;
+    feedback: string;
+    keyTakeaways: string[];
+  } | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const clientIdRef = useRef<string>(generateClientId());
 
@@ -91,6 +96,7 @@ export const useInterviewWebSocket = ({
 
             case "error":
               console.error("Error:", payload.message);
+              setCurrentQuestion(null);
               onError?.(payload.message);
               break;
           }
@@ -189,6 +195,7 @@ export const useInterviewWebSocket = ({
     submitAnswer,
     isConnected,
     currentQuestion,
+    setCurrentQuestion,
     questionNumber,
     feedback,
   };

@@ -62,7 +62,7 @@ const App = () => {
               }
             />
             <Route
-              path="/job/apply/:candidateId/join"
+              path="/job/apply/:jobid/join"
               element={
                 <>
                   <SignedIn>
@@ -75,7 +75,7 @@ const App = () => {
               }
             />
             <Route
-              path="/interview/:candidateId/call"
+              path="/interview/:jobid/call"
               element={
                 <>
                   <SignedIn>

@@ -71,13 +71,26 @@ const Job = () => {
       });
       return;
     }
+
+    // Save form data to localStorage
+    const applicationData = {
+      ...formData,
+      jobId: id,
+      jobTitle: job?.title,
+      company: job?.company,
+      appliedDate: new Date().toISOString(),
+    };
+    localStorage.setItem("applicationData", JSON.stringify(applicationData));
+
     // Generate a random candidate ID for demo purposes
     const candidateId = Math.floor(Math.random() * 1000000);
+    localStorage.setItem("candidateId", candidateId.toString());
+
     toast({
       title: "Application Submitted",
       description: "Your application has been submitted successfully!",
     });
-    navigate(`/job/apply/${candidateId}/join`);
+    navigate(`/job/apply/${id}/join`);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +106,15 @@ const Job = () => {
         return;
       }
       setResumeFile(file);
+
+      // Convert file to base64 and save to localStorage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        localStorage.setItem("candidateResume", base64String);
+        localStorage.setItem("resumeFileName", file.name);
+      };
+      reader.readAsDataURL(file);
     }
   };
 

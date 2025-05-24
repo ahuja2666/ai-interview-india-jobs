@@ -97,7 +97,7 @@ if (!document.getElementById("voiceWaveKeyframes")) {
 }
 
 const Interview = () => {
-  const { candidateId } = useParams();
+  const { jobid } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
@@ -127,7 +127,7 @@ const Interview = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // For demo purposes, we'll use the first job from DUMMY_JOBS
-  const job = DUMMY_JOBS[0];
+  const job = DUMMY_JOBS.find((item) => item.id === Number(jobid));
 
   const updateDeviceList = useCallback(async () => {
     try {
@@ -375,7 +375,7 @@ const Interview = () => {
   };
 
   const handleStartInterview = async () => {
-    navigate(`/interview/${candidateId}/call`);
+    navigate(`/interview/${jobid}/call`);
   };
 
   return (
