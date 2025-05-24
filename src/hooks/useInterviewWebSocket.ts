@@ -40,10 +40,7 @@ export const useInterviewWebSocket = ({
 
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host =
-        process.env.NODE_ENV === "production"
-          ? window.location.host
-          : "localhost:8000";
+      const host = "genai-interview-api.up.railway.app";
       const wsUrl = `${protocol}//${host}/ws/${clientIdRef.current}`;
 
       console.log(`Connecting to WebSocket at: ${wsUrl}`);
