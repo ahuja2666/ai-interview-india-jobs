@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import Feedback from "@/components/Feedback";
+import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, MicOff, Video, VideoOff, Share2, PhoneOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import NavBar from "@/components/NavBar";
 import { useInterviewWebSocket } from "@/hooks/useInterviewWebSocket";
-import { DUMMY_FEEDBACK, DUMMY_JOBS, DUMMY_RESUME } from "@/lib/constants";
-import Feedback from "@/components/Feedback";
+import { DUMMY_JOBS } from "@/lib/constants";
+import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 // Add type declarations for SpeechRecognition
 interface SpeechRecognitionEvent extends Event {
@@ -630,13 +629,13 @@ const InterviewCall = () => {
   }, []);
 
   useEffect(() => {
-    if (isConnected && isScreenSharing) {
+    if (isConnected) {
       startInterview(
         JSON.stringify(DUMMY_JOBS.find((item) => item.id === Number(jobid))),
         localStorage.getItem("candidateResume")
       );
     }
-  }, [isConnected, isScreenSharing]);
+  }, [isConnected]);
 
   // Effect to handle screen sharing when interview ends
   useEffect(() => {
@@ -737,7 +736,7 @@ const InterviewCall = () => {
                         : "processing..."}
                     </p>
                     {/* Interview Status Indicator */}
-                    <div className="mt-2 flex items-center justify-center gap-2">
+                    {/* <div className="mt-2 flex items-center justify-center gap-2">
                       <span
                         className={`w-3 h-3 rounded-full ${
                           isScreenSharing ? "bg-green-500" : "bg-red-500"
@@ -748,7 +747,7 @@ const InterviewCall = () => {
                           ? "Interview Running"
                           : "Interview Paused (Screen Share Required)"}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                   <div className="mt-2 flex justify-center items-center gap-2">
                     <span
@@ -781,7 +780,7 @@ const InterviewCall = () => {
                       className="w-full h-full object-cover"
                       style={{ transform: "scaleX(-1)" }}
                     />
-                    {!isScreenSharing && (
+                    {/* {!isScreenSharing && (
                       <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
                         <p className="text-white text-center px-4 text-sm">
                           Entire Screen sharing required.
@@ -789,7 +788,7 @@ const InterviewCall = () => {
                           Click the share button below to re-share.
                         </p>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </CardContent>
               </Card>
@@ -820,13 +819,13 @@ const InterviewCall = () => {
                         <Video className="h-4 w-4" />
                       )}
                     </Button>
-                    <Button
+                    {/* <Button
                       variant={!isScreenSharing ? "destructive" : "outline"}
                       size="icon"
                       onClick={toggleScreenShare} // This button now triggers re-prompt if needed
                     >
                       <Share2 className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                     <Button variant="destructive" size="icon" onClick={endCall}>
                       <PhoneOff className="h-4 w-4" />
                     </Button>
